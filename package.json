@@ -1,0 +1,37 @@
+{
+  "name": "affinidi-badges-smart-contract",
+  "version": "0.0.1",
+  "scripts": {
+    "hardhat": "node --require esm node_modules/.bin/hardhat",
+    "compile": "npm run hardhat compile",
+    "deploy": "npm run hardhat deploy",
+    "gasreport": "npm run hardhat test",
+    "test": "npm run hardhat coverage",
+    "lint": "prettier . --write && solhint 'contracts/**/*.sol'",
+    "format": "prettier . --write"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.4",
+    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
+    "@nomiclabs/hardhat-etherscan": "^3.1.0",
+    "@openzeppelin/contracts": "^4.7.3",
+    "base64-sol": "^1.1.0",
+    "chai": "^4.3.6",
+    "dotenv": "^16.0.1",
+    "esm": "^3.2.25",
+    "ethers": "^5.6.9",
+    "hardhat": "^2.10.2",
+    "hardhat-deploy": "^0.11.12",
+    "prettier": "^2.7.1",
+    "solhint": "^3.3.7"
+  },
+  "overrides": {
+    "@nomicfoundation/hardhat-toolbox": {
+      "@nomiclabs/hardhat-ethers": "$@nomiclabs/hardhat-ethers"
+    },
+    "@nomicfoundation/hardhat-chai-matchers": {
+      "@nomiclabs/hardhat-ethers": "$@nomiclabs/hardhat-ethers"
+    }
+  }
+}
