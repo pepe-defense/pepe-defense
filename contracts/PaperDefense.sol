@@ -70,7 +70,7 @@ contract PaperDefense {
     // }
 
     function place_towers(uint256[] calldata _positions) external {
-        Game storage game = s_game[msg.sender].world;
+        Game storage game = s_game[msg.sender];
         // Cell[MAP_WIDTH * MAP_HEIGHT] storage cells = s_cells[msg.sender];
         for (uint256 i = 0; i < _positions.length; i++) {
             Tower storage s_tower = game.towers[_positions[i]];

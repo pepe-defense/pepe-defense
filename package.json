@@ -1,5 +1,5 @@
 {
-  "name": "affinidi-badges-smart-contract",
+  "name": "paper-defense",
   "version": "0.0.1",
   "scripts": {
     "hardhat": "node --require esm node_modules/.bin/hardhat",

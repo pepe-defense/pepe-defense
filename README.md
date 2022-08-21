@@ -1,15 +1,10 @@
-# affinidi-badges-smart-contract
+# paper-defense
 
 > The current repo depends on the `esm` package because Hardhat doesn't support it.
 > They seems [to have it planned](https://github.com/NomicFoundation/hardhat/issues/957) but it's not there yet.
 > This means you can't run `npx hardhat` to interract with this repo
 
 ## Install
-
-```sh
-git clone git@gitlab.com:affinidi/internal-tools/affinidi-badges-smart-contract.git
-cd affinidi-badges-smart-contract
-```
 
 ```sh
 npm i
