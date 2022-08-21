@@ -37,7 +37,8 @@ contract PaperDefense {
         uint256[] cells_with_towers;
         // cell id to tower
         mapping(uint256 => Tower) towers;
-        Mob[] mobs;
+        mapping(uint256 => Mob) mobs;
+        uint256 mob_length;
     }
 
     uint256 public constant MAP_WIDTH = 10;
@@ -62,7 +63,9 @@ contract PaperDefense {
     function new_game() external {
         Game storage game = s_game[msg.sender];
         game.wave_completed = true;
-        game.mobs = s_wave_to_ennemies[0];
+        game.wave = 1;
+        game.mob_length = 1;
+        _load_new_wave(game);
     }
 
     // function _cell_at(Cell[] _cells, uint256 _x, uint256 _y) private pure returns(Cell storage) {
@@ -83,32 +86,31 @@ contract PaperDefense {
 
     function _spawn_mobs(Game storage _state) private {
         uint256 tick = _state.tick;
-        Mob[] memory mobs = _state.mobs;
 
-        for (uint256 i = 0; i < mobs.length; i++) {
-            if (mobs[i].spawned) continue;
-            if (tick >= mobs[i].delay) {
+        for (uint256 i = 0; i < _state.mob_length; i++) {
+            Mob memory mob = _state.mobs[i];
+            if (mob.spawned) continue;
+            if (tick >= mob.delay) {
                 _state.mobs[i].spawned = true;
             }
         }
     }
 
     function _execute_mobs(Game storage _state) private {
-        Mob[] storage mobs = _state.mobs;
-        for (uint256 i = 0; i < mobs.length; i++) {
-            Mob storage mob = mobs[i];
+        for (uint256 i = 0; i < _state.mob_length; i++) {
+            Mob storage mob = _state.mobs[i];
 
             if (mob.life == 0) continue;
 
             uint256 speed = mob.speed;
             uint256 target_cell = mob.path[mob.target_cell_index];
 
-            mob.step += speed;
+            mob.steps += speed;
 
-            if (mob.step >= 100) {
+            if (mob.steps >= 100) {
                 // reset the steps but keep advance
                 // if the mob walked 114 steps we set it at 14 steps for the new cell
-                mob.step -= 100;
+                mob.steps -= 100;
                 mob.cell_id = target_cell;
                 mob.target_cell_index++;
 
@@ -129,8 +131,8 @@ contract PaperDefense {
         y = id % MAP_WIDTH;
     }
 
-    function _abs(int256 x) private pure returns (int256) {
-        return x >= 0 ? x : -x;
+    function _abs(int256 x) private pure returns (uint256) {
+        return uint256(x >= 0 ? x : -x);
     }
 
     function _manhattan(
@@ -139,14 +141,14 @@ contract PaperDefense {
         uint256 y1,
         uint256 y2
     ) private pure returns (uint256) {
-        return _abs(x2 - x1) + _abs(y2 - y1);
+        return _abs(int256(x2 - x1)) + _abs(int256(y2 - y1));
     }
 
     function _is_in_range(
         uint256 _mob_cell_id,
         uint256 _tower_cell_id,
         uint256 _range
-    ) private view returns (bool) {
+    ) private pure returns (bool) {
         (uint256 mob_x, uint256 mob_y) = _get_position(_mob_cell_id);
         (uint256 tower_x, uint256 tower_y) = _get_position(_tower_cell_id);
         return _manhattan(mob_x, tower_x, mob_y, tower_y) <= _range;
@@ -155,7 +157,6 @@ contract PaperDefense {
     function _execute_towers(Game storage _state) private {
         uint256 tick = _state.tick;
         uint256[] memory towers_cells = _state.cells_with_towers;
-        Mob[] storage mobs = _state.mobs;
 
         for (
             uint256 tower_cell_index = 0;
@@ -167,13 +168,17 @@ contract PaperDefense {
             // memory because the loop will rarely need to update it
             Tower memory tower = _state.towers[tower_cell_id];
 
-            for (uint256 mob_index = 0; mob_index < mobs.length; mob_index++) {
-                Mob storage mob = mobs[mob_index];
+            for (
+                uint256 mob_index = 0;
+                mob_index < _state.mob_length;
+                mob_index++
+            ) {
+                Mob storage mob = _state.mobs[mob_index];
                 if (
                     !mob.spawned ||
                     mob.reached_goal ||
                     mob.life == 0 ||
-                    !_is_in_range(mob.cell_id, tower.cell_id, tower.range)
+                    !_is_in_range(mob.cell_id, tower_cell_id, tower.range)
                 ) continue;
 
                 // if the tower couldown is ready
@@ -193,22 +198,31 @@ contract PaperDefense {
         }
     }
 
-    function _playing(Mob[] memory mobs) private view returns (bool) {
-        for (uint256 i = 0; i < mobs.length; i++) {
-            Mob memory mob = mobs[i];
+    function _playing(Game storage _state) private view returns (bool) {
+        for (uint256 i = 0; i < _state.mob_length; i++) {
+            Mob memory mob = _state.mobs[i];
             if (mob.life > 0 && !mob.reached_goal) return true;
         }
         return false;
     }
 
-    function next_wave() external {
+    function _load_new_wave(Game storage _state) private {
+        Mob[] memory next_wave = s_wave_to_ennemies[_state.wave+1];
+        for (uint256 i = 0; i < next_wave.length; i++) {
+            _state.mobs[i] = next_wave[i];
+            _state.mob_length = next_wave.length;
+        }
+    }
+
+    function start_next_wave() external {
         Game storage game = s_game[msg.sender];
 
         require(game.wave_completed, 'You did not complete the previous wave');
 
         game.wave_completed = false;
+        game.wave++;
 
-        bool playing = _playing(game.mobs);
+        bool playing = _playing(game);
 
         while (playing) {
             // game tick
@@ -216,15 +230,16 @@ contract PaperDefense {
             _execute_mobs(game);
             _execute_towers(game);
 
-            playing = _playing(game.mobs);
+            playing = _playing(game);
         }
-
-        game.wave++;
 
         if (game.wave >= i_total_waves) {
             game.finished = true;
         } else {
-            game.mobs = s_wave_to_ennemies[game.wave];
+            for (uint256 i = 0; i < game.mob_length; i++) {
+                delete game.mobs[i];
+            }
+            _load_new_wave(game);
         }
     }
 }
