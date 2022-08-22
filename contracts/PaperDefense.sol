@@ -18,8 +18,6 @@ contract PaperDefense {
         // each cell has 100 steps
         // it can be seens as a percentage of distance towards the next cell
         uint256 steps;
-        // array of cell ids representing the mob path
-        uint256[] path;
         // we keep track of the current cell the mob is moving towards to
         uint256 target_cell_index;
         uint256 life;
@@ -37,27 +35,29 @@ contract PaperDefense {
         uint256[] cells_with_towers;
         // cell id to tower
         mapping(uint256 => Tower) towers;
+        // mob index to mob (kinda hack to have an array in a mapping)
         mapping(uint256 => Mob) mobs;
         uint256 mob_length;
     }
 
-    uint256 public constant MAP_WIDTH = 10;
-    uint256 public constant MAP_HEIGHT = 10;
+    uint256 public constant MAP_WIDTH = 5;
+    uint256 public constant MAP_HEIGHT = 5;
 
     // player to Game
     mapping(address => Game) private s_game;
-
-    // player to (id to Cell)
-    // mapping(address => mapping(uint256 => Cell)) private _cells_from_id;
-
+    // wave index to wave ennemies
     mapping(uint256 => Mob[]) private s_wave_to_ennemies;
-    uint256 public immutable i_total_waves;
 
-    constructor(Mob[][] memory waves) {
-        i_total_waves = waves.length;
-        for (uint256 i = 0; i < waves.length; i++) {
-            s_wave_to_ennemies[i] = waves[i];
-        }
+    uint256 public immutable i_total_waves;
+    uint256[5] private MOB_PATH = [uint256(0), 1, 2, 3, 4];
+
+    constructor() {
+        Mob memory mob;
+        mob.life = 1;
+        mob.speed = 1;
+
+        s_wave_to_ennemies[1].push(mob);
+        i_total_waves = 1;
     }
 
     function new_game() external {
@@ -103,7 +103,7 @@ contract PaperDefense {
             if (mob.life == 0) continue;
 
             uint256 speed = mob.speed;
-            uint256 target_cell = mob.path[mob.target_cell_index];
+            uint256 target_cell = MOB_PATH[mob.target_cell_index];
 
             mob.steps += speed;
 
@@ -114,7 +114,7 @@ contract PaperDefense {
                 mob.cell_id = target_cell;
                 mob.target_cell_index++;
 
-                if (mob.target_cell_index > mob.path.length) {
+                if (mob.target_cell_index > MOB_PATH.length) {
                     // mob reached the end of is path, the player lost a life
                     mob.reached_goal = true;
                 }
@@ -207,7 +207,7 @@ contract PaperDefense {
     }
 
     function _load_new_wave(Game storage _state) private {
-        Mob[] memory next_wave = s_wave_to_ennemies[_state.wave+1];
+        Mob[] memory next_wave = s_wave_to_ennemies[_state.wave + 1];
         for (uint256 i = 0; i < next_wave.length; i++) {
             _state.mobs[i] = next_wave[i];
             _state.mob_length = next_wave.length;

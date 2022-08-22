@@ -7,8 +7,8 @@
     "deploy": "npm run hardhat deploy",
     "gasreport": "npm run hardhat test",
     "test": "npm run hardhat coverage",
-    "lint": "prettier . --write && solhint 'contracts/**/*.sol'",
-    "format": "prettier . --write"
+    "lint": "eslint . && prettier . --check && solhint 'contracts/**/*.sol'",
+    "format": "prettier . --write && eslint . --fix"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-network-helpers": "^1.0.4",
@@ -24,7 +24,15 @@
     "hardhat": "^2.10.2",
     "hardhat-deploy": "^0.11.12",
     "prettier": "^2.7.1",
-    "solhint": "^3.3.7"
+    "solhint": "^3.3.7",
+    "@babel/core": "^7.18.2",
+    "@babel/eslint-parser": "7.18.2",
+    "eslint": "^8.16.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-config-standard": "17.0.0",
+    "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-promise": "6.0.0"
   },
   "overrides": {
     "@nomicfoundation/hardhat-toolbox": {
