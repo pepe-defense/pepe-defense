@@ -1,5 +1,8 @@
-import { expect } from 'chai'
+import deep_equal from 'deep-equal-in-any-order'
+import chai, { expect } from 'chai'
 import { deployments, ethers } from 'hardhat'
+
+chai.use(deep_equal)
 
 const parse_struct = fields =>
   Object.fromEntries(
@@ -13,35 +16,58 @@ const parse_struct = fields =>
 
 const deploy = async () => {
   await deployments.fixture()
-  const [bruce, john] = await ethers.getSigners()
+  const [bruce, tony] = await ethers.getSigners()
   return {
     bruce: {
       contract: await ethers.getContract('PaperDefense', bruce),
       address: await bruce.getAddress(),
     },
     tony: {
-      contract: await ethers.getContract('PaperDefense', john),
-      address: await john.getAddress(),
+      contract: await ethers.getContract('PaperDefense', tony),
+      address: await tony.getAddress(),
     },
   }
 }
 
 describe('Starting a new Game', function () {
+  it(`should set a specific state to the player's game`, async () => {
+    const expected_state = {
+      wave: 1,
+      life: 0,
+      wave_started: false,
+      finished: false,
+      tick: 0,
+      mob_length: 1,
+    }
+
+    const { tony } = await deploy()
+    await tony.contract.new_game()
+    const state = parse_struct(await tony.contract.s_game(tony.address))
+
+    expect(state).to.deep.equalInAnyOrder(expected_state)
+  })
+
+  it('should set the total waves uint', async () => {
+    const { tony } = await deploy()
+    await tony.contract.new_game()
+    expect(await tony.contract.i_total_waves()).to.equal(1)
+  })
+
   it(`should load the wave's mob into the game state`, async () => {
     const { tony } = await deploy()
 
     await tony.contract.new_game()
     const mobs = [...(await tony.contract.get_mobs())].map(parse_struct)
-    expect(mobs[0]).to.deep.equal({
-      cell_id: 0,
-      damage: 0,
-      delay: 0,
-      life: 3,
-      reached_goal: false,
+    expect(mobs[0]).to.deep.equalInAnyOrder({
       spawned: false,
-      speed: 1,
+      reached_goal: false,
+      cell_id: 0,
       steps: 0,
       target_cell_index: 0,
+      life: 3,
+      damage: 0,
+      speed: 1,
+      delay: 0,
     })
   })
 })

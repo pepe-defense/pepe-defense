@@ -34,7 +34,7 @@ contract PaperDefense {
     struct Game {
         uint256 wave;
         uint256 life;
-        bool wave_completed;
+        bool wave_started;
         // no more waves
         bool finished;
         uint256 tick;
@@ -53,7 +53,7 @@ contract PaperDefense {
     uint256 public constant MAP_HEIGHT = 5;
 
     // player to Game
-    mapping(address => Game) private s_game;
+    mapping(address => Game) public s_game;
     // wave index to wave ennemies
     mapping(uint256 => Mob[]) private s_wave_to_ennemies;
 
@@ -213,7 +213,6 @@ contract PaperDefense {
 
     function new_game() external {
         Game storage game = s_game[msg.sender];
-        game.wave_completed = true;
         game.wave = 1;
         _load_wave(game);
     }
@@ -237,9 +236,9 @@ contract PaperDefense {
     function start_wave() external {
         Game storage game = s_game[msg.sender];
 
-        require(game.wave_completed, 'You did not complete the previous wave');
+        require(game.wave_started, 'You did not complete the previous wave');
 
-        game.wave_completed = false;
+        game.wave_started = true;
 
         bool playing = _playing(game);
 
