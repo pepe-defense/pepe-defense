@@ -1,7 +1,5 @@
 import { expect } from 'chai'
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
-import { deployments, ethers, getNamedAccounts } from 'hardhat'
-import { base64 } from 'ethers/lib/utils'
+import { deployments, ethers } from 'hardhat'
 
 const parse_struct = fields =>
   Object.fromEntries(
@@ -16,7 +14,6 @@ const parse_struct = fields =>
 const deploy = async () => {
   await deployments.fixture()
   const [bruce, john] = await ethers.getSigners()
-  const contract = await ethers.getContract('PaperDefense', bruce)
   return {
     bruce: {
       contract: await ethers.getContract('PaperDefense', bruce),
