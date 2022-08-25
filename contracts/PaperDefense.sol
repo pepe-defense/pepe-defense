@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import 'hardhat/console.sol';
+
 contract PaperDefense {
+    // Structures ===========================================================================
+
     struct Tower {
         uint256 damage;
         uint256 range;
@@ -21,12 +25,15 @@ contract PaperDefense {
         // we keep track of the current cell the mob is moving towards to
         uint256 target_cell_index;
         uint256 life;
+        // life cost when the mob reach the goal
+        uint256 damage;
         uint256 speed;
         uint256 delay;
     }
 
     struct Game {
         uint256 wave;
+        uint256 life;
         bool wave_completed;
         // no more waves
         bool finished;
@@ -40,6 +47,8 @@ contract PaperDefense {
         uint256 mob_length;
     }
 
+    // Storage ==============================================================================
+
     uint256 public constant MAP_WIDTH = 5;
     uint256 public constant MAP_HEIGHT = 5;
 
@@ -51,38 +60,18 @@ contract PaperDefense {
     uint256 public immutable i_total_waves;
     uint256[5] private MOB_PATH = [uint256(0), 1, 2, 3, 4];
 
+    // Initialisation =======================================================================
     constructor() {
         Mob memory mob;
-        mob.life = 1;
+        mob.life = 3;
         mob.speed = 1;
 
         s_wave_to_ennemies[1].push(mob);
+        // s_wave_to_ennemies[1].push(mob);
         i_total_waves = 1;
     }
 
-    function new_game() external {
-        Game storage game = s_game[msg.sender];
-        game.wave_completed = true;
-        game.wave = 1;
-        game.mob_length = 1;
-        _load_new_wave(game);
-    }
-
-    // function _cell_at(Cell[] _cells, uint256 _x, uint256 _y) private pure returns(Cell storage) {
-    //     return _cells[_x * MAP_WIDTH] + y;
-    // }
-
-    function place_towers(uint256[] calldata _positions) external {
-        Game storage game = s_game[msg.sender];
-        // Cell[MAP_WIDTH * MAP_HEIGHT] storage cells = s_cells[msg.sender];
-        for (uint256 i = 0; i < _positions.length; i++) {
-            Tower storage s_tower = game.towers[_positions[i]];
-
-            s_tower.damage = 1;
-            s_tower.range = 2;
-            s_tower.fire_rate = 1;
-        }
-    }
+    // Game engine ==========================================================================
 
     function _spawn_mobs(Game storage _state) private {
         uint256 tick = _state.tick;
@@ -101,22 +90,27 @@ contract PaperDefense {
             Mob storage mob = _state.mobs[i];
 
             if (mob.life == 0) continue;
+            mob.steps += mob.speed;
 
-            uint256 speed = mob.speed;
-            uint256 target_cell = MOB_PATH[mob.target_cell_index];
-
-            mob.steps += speed;
-
+            // if mob is switching cell
             if (mob.steps >= 100) {
                 // reset the steps but keep advance
                 // if the mob walked 114 steps we set it at 14 steps for the new cell
                 mob.steps -= 100;
-                mob.cell_id = target_cell;
+                mob.cell_id = MOB_PATH[mob.target_cell_index];
                 mob.target_cell_index++;
 
-                if (mob.target_cell_index > MOB_PATH.length) {
-                    // mob reached the end of is path, the player lost a life
+                if (mob.target_cell_index >= MOB_PATH.length) {
+                    // mob reached the end of is path
                     mob.reached_goal = true;
+
+                    if (_state.life - mob.damage > 0) {
+                        // game over
+                        _state.life = 0;
+                        return;
+                    }
+
+                    _state.life -= mob.damage;
                 }
             }
         }
@@ -199,6 +193,7 @@ contract PaperDefense {
     }
 
     function _playing(Game storage _state) private view returns (bool) {
+        if (_state.life == 0) return true;
         for (uint256 i = 0; i < _state.mob_length; i++) {
             Mob memory mob = _state.mobs[i];
             if (mob.life > 0 && !mob.reached_goal) return true;
@@ -206,32 +201,59 @@ contract PaperDefense {
         return false;
     }
 
-    function _load_new_wave(Game storage _state) private {
-        Mob[] memory next_wave = s_wave_to_ennemies[_state.wave + 1];
+    function _load_wave(Game storage _state) private {
+        Mob[] memory next_wave = s_wave_to_ennemies[_state.wave];
         for (uint256 i = 0; i < next_wave.length; i++) {
             _state.mobs[i] = next_wave[i];
             _state.mob_length = next_wave.length;
         }
     }
 
-    function start_next_wave() external {
+    // Game calls ===========================================================================
+
+    function new_game() external {
+        Game storage game = s_game[msg.sender];
+        game.wave_completed = true;
+        game.wave = 1;
+        _load_wave(game);
+    }
+
+    // function _cell_at(Cell[] _cells, uint256 _x, uint256 _y) private pure returns(Cell storage) {
+    //     return _cells[_x * MAP_WIDTH] + y;
+    // }
+
+    function place_towers(uint256[] calldata _positions) external {
+        Game storage game = s_game[msg.sender];
+        // Cell[MAP_WIDTH * MAP_HEIGHT] storage cells = s_cells[msg.sender];
+        for (uint256 i = 0; i < _positions.length; i++) {
+            Tower storage s_tower = game.towers[_positions[i]];
+
+            s_tower.damage = 1;
+            s_tower.range = 2;
+            s_tower.fire_rate = 1;
+        }
+    }
+
+    function start_wave() external {
         Game storage game = s_game[msg.sender];
 
         require(game.wave_completed, 'You did not complete the previous wave');
 
         game.wave_completed = false;
-        game.wave++;
 
         bool playing = _playing(game);
 
         while (playing) {
             // game tick
             _spawn_mobs(game);
-            _execute_mobs(game);
             _execute_towers(game);
+            _execute_mobs(game);
 
             playing = _playing(game);
         }
+
+        // done playing
+        game.wave++;
 
         if (game.wave >= i_total_waves) {
             game.finished = true;
@@ -239,7 +261,17 @@ contract PaperDefense {
             for (uint256 i = 0; i < game.mob_length; i++) {
                 delete game.mobs[i];
             }
-            _load_new_wave(game);
+            _load_wave(game);
         }
+    }
+
+    function get_mobs() external view returns (Mob[] memory) {
+        uint256 mob_amount = s_game[msg.sender].mob_length;
+        Mob[] memory mobs = new Mob[](mob_amount);
+        for (uint256 i = 0; i < mob_amount; i++) {
+            mobs[i] = s_game[msg.sender].mobs[i];
+        }
+
+        return mobs;
     }
 }
