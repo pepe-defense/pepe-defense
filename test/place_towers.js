@@ -29,7 +29,7 @@ export default deploy => () => {
 
   it('should place towers on corrects cells', async () => {
     const tower = {
-      damage: 5,
+      damage: 3,
       range: 2,
       fire_rate: 3,
       last_fired: 0,

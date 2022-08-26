@@ -35,6 +35,9 @@ contract PaperDefense {
         uint256 wave;
         uint256 life;
         bool wave_started;
+        // timestamp the wave was completed
+        // used in score calculation
+        uint256 wave_completed_at;
         // no more waves
         bool finished;
         uint256 tick;
@@ -56,6 +59,9 @@ contract PaperDefense {
 
     // player to Game
     mapping(address => Game) public s_game;
+    // player to highscore
+    mapping(address => uint256) public s_score;
+    uint256 total_score;
     // wave index to wave ennemies
     mapping(uint256 => Mob[]) private s_wave_to_ennemies;
 
@@ -101,11 +107,7 @@ contract PaperDefense {
 
     // Initialisation =======================================================================
     constructor() {
-        Mob memory mob;
-        mob.life = 3;
-        mob.speed = 20;
-
-        s_wave_to_ennemies[1].push(mob);
+        s_wave_to_ennemies[1].push(_create_mob());
         // s_wave_to_ennemies[1].push(mob);
         i_total_waves = 1;
     }
@@ -122,6 +124,18 @@ contract PaperDefense {
                 _state.mobs[i].spawned = true;
             }
         }
+    }
+
+    function _create_mob() private pure returns (Mob memory mob) {
+        mob.life = 10;
+        mob.speed = 20;
+        mob.target_cell_index = 1;
+    }
+
+    function _create_tower() private pure returns (Tower memory tower) {
+        tower.damage = 3;
+        tower.range = 2;
+        tower.fire_rate = 3;
     }
 
     function _execute_mobs(Game storage _state) private {
@@ -164,12 +178,22 @@ contract PaperDefense {
         y = id % MAP_WIDTH;
     }
 
-    // function _abs(uint256 x) private pure returns (uint256) {
-    //     return uint256(x >= 0 ? x : int256(-x));
-    // }
-
     function _abs(int256 x) private pure returns (int256) {
         return x >= 0 ? x : -x;
+    }
+
+    function _compute_score() private view returns (uint256) {
+        uint256 tower_amount = s_game[msg.sender].cells_with_towers.length;
+        // define the cost of each tower later
+        // (with type and upgrades)
+        uint256 total_tower_cost = tower_amount * 100;
+        uint256 time_spent = block.timestamp / 1 days;
+        uint256 score = total_tower_cost *
+            s_game[msg.sender].life *
+            s_game[msg.sender].wave;
+
+        if (score < time_spent) return 0;
+        return score - time_spent;
     }
 
     function _manhattan(
@@ -196,14 +220,14 @@ contract PaperDefense {
     function _execute_towers(Game storage _state) private {
         uint256 tick = _state.tick;
         uint256[] memory towers_cells = _state.cells_with_towers;
-        console.log('----[ Towers Tick ]----');
+        // console.log('----[ Towers Tick ]----');
         for (
             uint256 tower_cell_index = 0;
             tower_cell_index < towers_cells.length;
             tower_cell_index++
         ) {
             uint256 tower_cell_id = towers_cells[tower_cell_index];
-            console.log('==> Tower (%s)', tower_cell_id);
+            // console.log('==> Tower (%s)', tower_cell_id);
             // memory because the loop will rarely need to update it
             Tower memory tower = _state.towers[tower_cell_id];
 
@@ -213,34 +237,32 @@ contract PaperDefense {
                 mob_index++
             ) {
                 Mob storage mob = _state.mobs[mob_index];
-                console.log(
-                    '======> Found mob %s (%s%)',
-                    mob.cell_id,
-                    mob.steps
-                );
+                // console.log(
+                //     '-> Mob [cell: %s (%s/100), life: %s]',
+                //     mob.cell_id,
+                //     mob.steps,
+                //     mob.life
+                // );
                 if (
                     !mob.spawned ||
                     mob.reached_goal ||
                     mob.life == 0 ||
                     !_is_in_range(mob.cell_id, tower_cell_id, tower.range)
                 ) continue;
-                console.log('======> mob alive and in range!');
+                // console.log('-> Mob in range');
                 // if the tower couldown is ready
                 if (tower.last_fired + tower.fire_rate <= tick) {
                     // taking from storage
                     _state.towers[tower_cell_id].last_fired = tick;
-                    console.log('===> Tower firing!');
+                    // console.log('<- Tower firing!');
                     // if tower will kill the mob
                     if (mob.life <= tower.damage) {
-                        console.log('======> Mob is dead');
+                        // console.log('<> Mob is dead');
                         mob.life = 0;
                         // if tower is not going to kill the mob
                     } else {
-                        console.log('======> Mob is now %s/%s', mob.life, 3);
                         mob.life -= tower.damage;
                     }
-                } else {
-                    console.log('tower is reloading..');
                 }
             }
         }
@@ -261,10 +283,15 @@ contract PaperDefense {
     }
 
     function _load_wave(Game storage _state) private {
+        // reset mobs
+        for (uint256 i = 0; i < _state.mobs_length; i++) {
+            delete _state.mobs[i];
+        }
+        // load new mobs
         Mob[] memory next_wave = s_wave_to_ennemies[_state.wave];
+        _state.mobs_length = next_wave.length;
         for (uint256 i = 0; i < next_wave.length; i++) {
             _state.mobs[i] = next_wave[i];
-            _state.mobs_length = next_wave.length;
         }
     }
 
@@ -300,11 +327,7 @@ contract PaperDefense {
             if (_is_on_mob_path(cell_id))
                 revert("You can't place a tower on the ennemies path");
 
-            Tower storage s_tower = game.towers[cell_id];
-
-            s_tower.damage = 5;
-            s_tower.range = 2;
-            s_tower.fire_rate = 3;
+            game.towers[cell_id] = _create_tower();
             game.cells_with_towers.push(cell_id);
         }
     }
@@ -333,18 +356,26 @@ contract PaperDefense {
         );
 
         // done playing
-        game.wave++;
+        bool won_the_wave = game.life > 0;
+
+        if (won_the_wave) {
+            // increase wave
+            game.wave++;
+
+            // increase score
+            uint256 wave_score = _compute_score();
+            s_score[msg.sender] += wave_score;
+            total_score += wave_score;
+        }
 
         if (game.wave >= i_total_waves) {
             game.finished = true;
         } else {
-            for (uint256 i = 0; i < game.mobs_length; i++) {
-                delete game.mobs[i];
-            }
             _load_wave(game);
         }
 
-        emit wave_end(msg.sender, game.wave - 1, game.life > 0);
+        emit wave_end(msg.sender, game.wave - 1, won_the_wave);
+        game.wave_started = false;
     }
 
     function get_mobs() external view returns (Mob[] memory) {
