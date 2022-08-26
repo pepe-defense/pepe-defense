@@ -10,12 +10,18 @@ dotenv.config()
 const TEST_ETH_PRIVATE_KEY =
   '3065dd71bc8c9471cd03b0a88139d601e3cf8c315de8deb9efabec8d49f52965'
 
+const { CMC_KEY } = process.env
+
 export default {
   solidity: {
     compilers: [{ version: '0.8.16' }, { version: '^0.8.0' }],
   },
   gasReporter: {
     enabled: true,
+    // token: 'MATIC',
+    currency: 'EUR',
+    showTimeSpent: true,
+    ...(CMC_KEY && { coinmarketcap: CMC_KEY }),
   },
   networks: {
     goerli: {
