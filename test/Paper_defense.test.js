@@ -13,11 +13,11 @@ const deploy = async () => {
   const [bruce, tony] = await ethers.getSigners()
   return {
     bruce: {
-      contract: await ethers.getContract('PaperDefense', bruce),
+      contract: await ethers.getContract('Paper_defense', bruce),
       address: await bruce.getAddress(),
     },
     tony: {
-      contract: await ethers.getContract('PaperDefense', tony),
+      contract: await ethers.getContract('Paper_defense', tony),
       address: await tony.getAddress(),
     },
   }
