@@ -6,9 +6,9 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-// 0x6e0e181fE9FECD42a55f8F1DE6f14fFEF6B0ef1d
+// 0x6154f0Edd49C38C434d98175C1DECe68047F4952
 const TEST_ETH_PRIVATE_KEY =
-  '3065dd71bc8c9471cd03b0a88139d601e3cf8c315de8deb9efabec8d49f52965'
+  '038bd6788c61c62b46c61a669462b653ceff07297d55ff58b0ef8fa30488055c'
 
 const { CMC_KEY } = process.env
 

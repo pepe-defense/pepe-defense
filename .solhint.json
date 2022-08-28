@@ -5,6 +5,9 @@
     "var-name-mixedcase": "off",
     "func-visibility": ["warn", { "ignoreConstructors": true }],
     "compiler-version": ["error", "^0.8.16"],
-    "quotes": "off"
+    "quotes": "off",
+    "contract-name-camelcase": "off",
+    "event-name-camelcase": "off",
+    "func-name-mixedcase": "off"
   }
 }
