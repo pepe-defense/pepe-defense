@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 
-import parse_struct from './parse_struct.js'
+import parse_struct from './util/parse_struct.js'
 
 export default deploy => () => {
   it('should make sure the game is started before', async () => {

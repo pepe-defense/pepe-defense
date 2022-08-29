@@ -1,7 +1,8 @@
 import { expect } from 'chai'
 import { ethers } from 'hardhat'
 
-import extract_event from './extract_event.js'
+import extract_event from './util/extract_event.js'
+import parse_struct from './util/parse_struct.js'
 
 const to_number = bn => bn.toNumber()
 
@@ -9,7 +10,7 @@ export default deploy => () => {
   // it('should prevent playing if the game is finished', async () => {
   //   const { tony } = await deploy()
   //   await tony.contract.new_game()
-  //   await tony.contract.place_towers([12, 22, 32, 52, 62, 72], 99999999, 100, 1)
+  //   await tony.contract.place_towers([12, 22, 62, 72], 99999999, 100, 1)
 
   //   await Promise.all(
   //     Array.from({ length: 9 }).map(() => tony.contract.start_wave())
@@ -87,9 +88,13 @@ export default deploy => () => {
       days_since_deployed_2 * 24 * 60 * 60 + Date.now() / 1000,
     ])
 
-    const score_1 = await tony.contract.s_score(tony.address).then(to_number)
+    const { score: score_1 } = await tony.contract
+      .s_game(tony.address)
+      .then(parse_struct)
     const { won } = await tony.contract.start_wave().then(extract_event)
-    const score_2 = await tony.contract.s_score(tony.address).then(to_number)
+    const { score: score_2 } = await tony.contract
+      .s_game(tony.address)
+      .then(parse_struct)
     const total_score = await tony.contract.total_score().then(to_number)
 
     const tower_cost = 200
