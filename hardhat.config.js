@@ -12,9 +12,19 @@ const TEST_ETH_PRIVATE_KEY =
 
 const { CMC_KEY } = process.env
 
+const settings = {
+  optimizer: {
+    enabled: true,
+    // runs: 20,
+  },
+}
+
 export default {
   solidity: {
-    compilers: [{ version: '0.8.16' }, { version: '^0.8.0' }],
+    compilers: [
+      { version: '0.8.16', settings },
+      { version: '^0.8.0', settings },
+    ],
   },
   gasReporter: {
     enabled: true,

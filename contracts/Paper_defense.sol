@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import 'hardhat/console.sol';
+// import 'hardhat/console.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
+import './Leaderboard.sol';
 
-contract Paper_defense {
+contract Paper_defense is Leaderboard {
     // Structures ===========================================================================
 
     struct Tower {
@@ -38,6 +39,7 @@ contract Paper_defense {
         // no more waves
         bool finished;
         uint256 tick;
+        uint256 score;
         // all cells containing a tower
         uint256[] cells_with_towers;
         // cell id to tower
@@ -52,7 +54,7 @@ contract Paper_defense {
 
     uint256 public constant MAP_WIDTH = 10;
     uint256 public constant MAP_HEIGHT = 10;
-    uint256 public constant MAX_WAVES = 20;
+    uint256 public immutable MAX_WAVES;
 
     uint256 public constant MOB_BASE_LIFE = 3;
     uint256 public constant MOB_BASE_SPEED = 15;
@@ -67,8 +69,6 @@ contract Paper_defense {
 
     // player to Game
     mapping(address => Game) public s_game;
-    // player to highscore
-    mapping(address => uint256) public s_score;
     uint256 public total_score;
 
     // cell ids representing the path for the mobs
@@ -111,7 +111,10 @@ contract Paper_defense {
     ];
 
     // Initialisation =======================================================================
-    constructor() {
+    constructor(uint256 _max_wave, uint8 _leaderboard_length)
+        Leaderboard(_leaderboard_length)
+    {
+        MAX_WAVES = _max_wave;
         DEPLOY_TIMESTAMP = block.timestamp;
     }
 
@@ -329,7 +332,7 @@ contract Paper_defense {
         );
         uint256 mobs_spawned = 0;
         bool playing;
-        
+
         while (playing || mobs_spawned < mobs_amount) {
             if (mobs_spawned < mobs_amount) {
                 game.mobs[mobs_spawned++] = _create_mob(current_wave);
@@ -360,8 +363,11 @@ contract Paper_defense {
         if (won_the_wave) {
             // increase score
             uint256 wave_score = _compute_score();
-            s_score[msg.sender] += wave_score;
+
+            game.score += wave_score;
             total_score += wave_score;
+
+            _leaderboard_push(msg.sender, game.score);
 
             // increase wave
             game.wave++;

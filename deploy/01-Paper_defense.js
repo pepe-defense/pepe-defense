@@ -3,5 +3,6 @@ export default async ({ getNamedAccounts, deployments: { deploy } }) => {
   await deploy('Paper_defense', {
     from: owner,
     log: true,
+    args: [20, 20],
   })
 }

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 
-import parse_struct from './parse_struct.js'
+import parse_struct from './util/parse_struct.js'
 
 export default deploy => () => {
   it(`should set a specific state to the player's game`, async () => {
@@ -9,6 +9,7 @@ export default deploy => () => {
       life: 20,
       finished: false,
       tick: 0,
+      score: 0,
     }
 
     const { tony } = await deploy()
