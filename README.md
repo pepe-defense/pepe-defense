@@ -4,6 +4,8 @@
 > They seems [to have it planned](https://github.com/NomicFoundation/hardhat/issues/957) but it's not there yet.
 > This means you can't run `npx hardhat` to interract with this repo
 
+Deployed on goerli at `0x16017d44169D326E37C14A9b815B81e29Efc933D`
+
 ## Install
 
 ```sh
