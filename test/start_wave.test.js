@@ -21,6 +21,25 @@ export default deploy => () => {
   //   )
   // })
 
+  it('prevent starting a wave if the game is lost', async () => {
+    const { tony } = await deploy()
+    await tony.contract.new_game()
+    await tony.contract.start_wave()
+    await tony.contract.start_wave()
+    await expect(tony.contract.start_wave()).to.be.revertedWithCustomError(
+      tony.contract,
+      'game_lost'
+    )
+  })
+
+  it('should make sure the game was created first', async () => {
+    const { tony } = await deploy()
+    await expect(tony.contract.start_wave()).to.be.revertedWithCustomError(
+      tony.contract,
+      'game_not_started'
+    )
+  })
+
   it('should loose the game if the mobs are too powerful', async () => {
     const { tony } = await deploy()
     const expected = {
@@ -30,10 +49,7 @@ export default deploy => () => {
     }
 
     await tony.contract.new_game()
-
-    await Promise.all(
-      Array.from({ length: 2 }).map(() => tony.contract.start_wave())
-    )
+    await tony.contract.start_wave()
 
     const result = await tony.contract.start_wave().then(extract_event)
     expect(result).to.deep.equalInAnyOrder(expected)

@@ -10,21 +10,24 @@ dotenv.config()
 const TEST_ETH_PRIVATE_KEY =
   '038bd6788c61c62b46c61a669462b653ceff07297d55ff58b0ef8fa30488055c'
 
-const { CMC_KEY } = process.env
+const {
+  CMC_KEY,
+  MUMBAI_RPC,
+  ETH_PRIVATE_KEY = TEST_ETH_PRIVATE_KEY,
+  ETHERSCAN_APIKEY,
+  POLYGONSCAN_API_KEY,
+} = process.env
 
 const settings = {
   optimizer: {
     enabled: true,
-    // runs: 20,
   },
 }
 
 export default {
   solidity: {
-    compilers: [
-      { version: '0.8.16', settings },
-      { version: '^0.8.0', settings },
-    ],
+    version: '0.8.16',
+    settings,
   },
   gasReporter: {
     enabled: true,
@@ -34,9 +37,9 @@ export default {
     ...(CMC_KEY && { coinmarketcap: CMC_KEY }),
   },
   networks: {
-    goerli: {
-      url: process.env.GOERLI,
-      accounts: [process.env.PRIVATE_KEY || TEST_ETH_PRIVATE_KEY],
+    mumbai: {
+      url: MUMBAI_RPC,
+      accounts: [ETH_PRIVATE_KEY],
     },
   },
   namedAccounts: {
@@ -45,6 +48,10 @@ export default {
     },
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_APIKEY,
+    apiKey: {
+      goerli: ETHERSCAN_APIKEY,
+      polygon: POLYGONSCAN_API_KEY,
+      polygonMumbai: POLYGONSCAN_API_KEY,
+    },
   },
 }
