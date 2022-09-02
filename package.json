@@ -32,8 +32,6 @@
     "ethers": "^5.7.0",
     "hardhat": "^2.10.2",
     "hardhat-deploy": "^0.11.12",
-    "hardhat-diamond-abi": "^3.0.1",
-    "iterator-helper": "^1.3.4",
     "prettier": "^2.7.1",
     "solhint": "^3.3.7"
   },

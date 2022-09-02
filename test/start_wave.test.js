@@ -1,10 +1,8 @@
 import { expect } from 'chai'
-import { ethers } from 'hardhat'
 
 import extract_event from './util/extract_event.js'
-import parse_struct from './util/parse_struct.js'
 
-const to_number = bn => bn.toNumber()
+const number = bn => bn.toNumber()
 
 export default deploy => () => {
   // it('should prevent playing if the game is finished', async () => {
@@ -21,22 +19,20 @@ export default deploy => () => {
   //   )
   // })
 
-  it('prevent starting a wave if the game is lost', async () => {
+  it.only('prevent starting a wave if the game is lost', async () => {
     const { tony } = await deploy()
     await tony.contract.new_game()
     await tony.contract.start_wave()
     await tony.contract.start_wave()
-    await expect(tony.contract.start_wave()).to.be.revertedWithCustomError(
-      tony.contract,
-      'game_lost'
+    await expect(tony.contract.start_wave()).to.be.revertedWith(
+      'The game is over'
     )
   })
 
   it('should make sure the game was created first', async () => {
     const { tony } = await deploy()
-    await expect(tony.contract.start_wave()).to.be.revertedWithCustomError(
-      tony.contract,
-      'game_not_started'
+    await expect(tony.contract.start_wave()).to.be.revertedWith(
+      'The game must be started'
     )
   })
 
@@ -75,9 +71,7 @@ export default deploy => () => {
     await tony.contract.new_game()
     await tony.contract.start_wave()
 
-    expect((await tony.contract.s_game(tony.address)).tick.toNumber()).to.equal(
-      210
-    )
+    expect(await tony.contract.get_tick().then(number)).to.equal(210)
   })
 
   it('should remove life if a mob is not kiled', async () => {
@@ -85,9 +79,7 @@ export default deploy => () => {
     await tony.contract.new_game()
     await tony.contract.start_wave()
 
-    expect((await tony.contract.s_game(tony.address)).life.toNumber()).to.equal(
-      9
-    )
+    expect(await tony.contract.get_life()).to.equal(9)
   })
 
   it('should attribute score if the wave is won', async () => {
@@ -96,27 +88,15 @@ export default deploy => () => {
     await tony.contract.place_towers([11, 12], 200, 10, 1)
     await tony.contract.start_wave()
 
-    const days_since_deployed_1 = 0
-    const days_since_deployed_2 = 5
-
-    // going forward in time
-    await ethers.provider.send('evm_mine', [
-      days_since_deployed_2 * 24 * 60 * 60 + Date.now() / 1000,
-    ])
-
-    const { score: score_1 } = await tony.contract
-      .s_game(tony.address)
-      .then(parse_struct)
+    const { score: score_1 } = await tony.contract.get_score().then(number)
     const { won } = await tony.contract.start_wave().then(extract_event)
-    const { score: score_2 } = await tony.contract
-      .s_game(tony.address)
-      .then(parse_struct)
-    const total_score = await tony.contract.total_score().then(to_number)
+    const { score: score_2 } = await tony.contract.get_score().then(number)
+    const total_score = await tony.contract.total_score().then(number)
 
     const tower_cost = 200
     const life = 20
-    const expected_score_1 = tower_cost * life * 1 - days_since_deployed_1
-    const expected_score_2 = tower_cost * life * 2 - days_since_deployed_2
+    const expected_score_1 = tower_cost * life * 1
+    const expected_score_2 = tower_cost * life * 2
 
     // eslint-disable-next-line no-unused-expressions
     expect(won).to.be.true
