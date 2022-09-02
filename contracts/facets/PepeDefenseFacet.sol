@@ -32,7 +32,6 @@ import {State, Game, Mob, Leaderboard} from '../libraries/LibState.sol';
 import {LibMath} from '../libraries/LibMath.sol';
 import {LibGame} from '../libraries/LibGame.sol';
 import {MOB_BASE_AMOUNT, MOB_AMOUNT_MODIFIER, MAX_WAVES} from '../Constants.sol';
-import 'hardhat/console.sol';
 
 contract PepeDefenseFacet {
     using LibLeaderboard for Leaderboard;
@@ -105,13 +104,6 @@ contract PepeDefenseFacet {
         if (game.wave > MAX_WAVES) {
             game.finished = true;
         }
-
-        console.log(
-            '>> [wave %s] total ticks: %s | total mobs: %s',
-            current_wave,
-            game.tick,
-            mobs_amount
-        );
 
         emit wave_end(msg.sender, current_wave, won_the_wave);
         game.tick = 0;
