@@ -3,7 +3,7 @@ import { expect } from 'chai'
 import parse_struct from './util/parse_struct.js'
 
 export default deploy => async () => {
-  it.only('Should add in the top player', async () => {
+  it('Should add in the top player', async () => {
     const { tony } = await deploy()
 
     await tony.contract.new_game()
@@ -19,7 +19,7 @@ export default deploy => async () => {
       },
     ]
     expect(
-      [...(await tony.contract.leaderboard_view())]
+      [...(await tony.contract.get_leaderboard())]
         .map(parse_struct)
         .filter(({ score }) => !!score)
     ).to.deep.equalInAnyOrder(expected)
@@ -51,7 +51,7 @@ export default deploy => async () => {
       },
     ]
     expect(
-      [...(await tony.contract.leaderboard_view())]
+      [...(await tony.contract.get_leaderboard())]
         .map(parse_struct)
         .filter(({ score }) => !!score)
     ).to.deep.equal(expected)
