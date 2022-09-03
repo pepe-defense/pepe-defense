@@ -44,11 +44,12 @@ library LibLeaderboard {
         uint256 _score
     ) internal {
         uint8 LENGTH = leaderboard.LENGTH;
+        uint256 previous_score = leaderboard.high_scores[_user];
 
         // if user already has a biggest score
-        if (leaderboard.high_scores[_user] >= _score) return;
+        if (previous_score >= _score) return;
 
-        leaderboard.total_score += _score;
+        leaderboard.total_score += _score - previous_score;
 
         // if the score is too low, don't update
         if (_score_of(leaderboard, LENGTH - 1) >= _score) return;
@@ -75,7 +76,6 @@ library LibLeaderboard {
                 leaderboard.high_scores[_user] = _score;
 
                 // delete last from list
-                delete leaderboard.high_scores[leaderboard.users[LENGTH]];
                 delete leaderboard.users[LENGTH];
                 return;
             }

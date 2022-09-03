@@ -30,7 +30,6 @@ pragma solidity ^0.8.16;
 import {LibMath} from './LibMath.sol';
 
 struct Mob {
-    bool exists;
     bool reached_goal;
     uint256 cell_id;
     // steps towards next cell
@@ -47,10 +46,12 @@ struct Mob {
 }
 
 struct Tower {
+    uint8 cell_id;
     uint256 damage;
     uint8 range;
     uint8 fire_rate;
     uint256 last_fired;
+    uint256 score_value;
 }
 
 struct Game {
@@ -58,14 +59,11 @@ struct Game {
     uint8 life;
     // no more waves
     bool finished;
-    uint256 tick;
     uint256 score;
-    // all cells containing a tower
-    uint8[] cells_with_towers;
-    // cell id to tower
-    mapping(uint8 => Tower) towers;
-    // mob index to mob (kinda hack to have an array in a mapping)
-    mapping(uint256 => Mob) mobs;
+    uint256 total_tick;
+    // always store inner structs in mappings to be able to extend them
+    mapping(uint256 => Tower) towers;
+    uint256 tower_amount;
 }
 
 struct Leaderboard {
@@ -82,7 +80,9 @@ struct State {
     // ╔══════════════════════════════════════════════════════════[ TOWER DEFENSE
     mapping(address => Game) games;
     // ╔══════════════════════════════════════════════════════════[ LEADERBOARD
-    Leaderboard leaderboard;
+    // it is mandatory to store any structs inside a mapping
+    // to be able to extend them later
+    mapping(uint8 => Leaderboard) _leaderboard;
     uint8[] MOB_PATH;
 }
 
@@ -91,5 +91,13 @@ library LibState {
         assembly {
             s.slot := 0
         }
+    }
+
+    function leaderboard(State storage s)
+        internal
+        view
+        returns (Leaderboard storage)
+    {
+        return s._leaderboard[0];
     }
 }

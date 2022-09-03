@@ -33,13 +33,20 @@ import {LibState, State, Game, Mob, Tower} from '../libraries/LibState.sol';
 import {MAP_WIDTH, MOB_BASE_LIFE, MOB_LIFE_MODIFIER, MOB_BASE_SPEED, MOB_SPEED_MODIFIER, MOB_BASE_DAMAGE} from '../Constants.sol';
 
 library LibGame {
-    function move_mobs(
-        Game storage g,
-        uint256 _amount,
-        uint8[] memory MOB_PATH // to heavy to instantiate on each tick
-    ) internal {
-        for (uint256 i = 0; i < _amount; i++) {
-            Mob storage mob = g.mobs[i];
+    function compute_mobs(
+        Mob[] memory mobs,
+        uint256 _mobs_spawned,
+        uint8[] memory MOB_PATH, // to heavy to instantiate on each tick
+        uint8 _life_remaining
+    ) internal pure returns (uint8) {
+        for (uint256 i = 0; i < _mobs_spawned; i++) {
+            Mob memory mob = mobs[i];
+            // console.log(
+            //     'computing mob(%s) life: %s, cell: %s',
+            //     i,
+            //     mob.life,
+            //     mob.target_cell_index
+            // );
 
             if (mob.life == 0 || mob.reached_goal) continue;
 
@@ -57,34 +64,32 @@ library LibGame {
                     // mob reached the end of is path
                     mob.reached_goal = true;
 
-                    if (g.life - mob.damage <= 0) {
+                    if (_life_remaining - mob.damage <= 0) {
                         // game over
-                        g.life = 0;
-                        return;
-                    }
-
-                    g.life -= mob.damage;
+                        _life_remaining = 0;
+                    } else _life_remaining -= mob.damage;
                 }
             }
         }
+        return _life_remaining;
     }
 
-    function _damage_mob(Mob storage _mob, uint256 _damage) private {
+    function _damage_mob(Mob memory _mob, uint256 _damage) private pure {
         if (_mob.life <= _damage) _mob.life = 0;
         else _mob.life -= _damage;
     }
 
-    function _mob_can_be_damaged(
-        Mob storage _mob,
-        uint8 _tower_cell_id,
-        uint8 _range
-    ) private view returns (bool) {
-        if (_mob.reached_goal || _mob.life == 0) return true;
+    function _tower_can_damage(Tower memory _tower, Mob memory _mob)
+        private
+        pure
+        returns (bool)
+    {
+        if (_mob.reached_goal || _mob.life == 0) return false;
         return
             LibDistance.is_in_range(
                 _mob.cell_id,
-                _tower_cell_id,
-                _range,
+                _tower.cell_id,
+                _tower.range,
                 MAP_WIDTH
             );
     }
@@ -97,29 +102,22 @@ library LibGame {
         return _tower.last_fired + _tower.fire_rate <= _tick;
     }
 
-    function compute_towers(Game storage g, uint256 _mobs_spawned) internal {
-        uint256 tick = g.tick;
-        uint8[] memory cells_with_towers = g.cells_with_towers;
-        for (
-            uint8 tower_cell_index = 0;
-            tower_cell_index < cells_with_towers.length;
-            tower_cell_index++
-        ) {
-            uint8 tower_cell_id = cells_with_towers[tower_cell_index];
+    function compute_towers(
+        Tower[] memory _towers,
+        Mob[] memory mobs,
+        uint256 _mobs_spawned,
+        uint256 _tick
+    ) internal pure {
+        for (uint8 i = 0; i < _towers.length; i++) {
+            Tower memory tower = _towers[i];
 
-            for (
-                uint256 mob_index = 0;
-                mob_index < _mobs_spawned;
-                mob_index++
-            ) {
-                Mob storage mob = g.mobs[mob_index];
-                Tower memory tower = g.towers[tower_cell_id];
+            for (uint256 j = 0; j < _mobs_spawned; j++) {
+                Mob memory mob = mobs[j];
                 if (
-                    _mob_can_be_damaged(mob, tower_cell_id, tower.range) &&
-                    _tower_can_fire(tower, tick)
+                    _tower_can_fire(tower, _tick) &&
+                    _tower_can_damage(tower, mob)
                 ) {
-                    // updating storage
-                    g.towers[tower_cell_id].last_fired = tick;
+                    tower.last_fired = _tick;
                     _damage_mob(mob, tower.damage);
                 }
             }
@@ -137,38 +135,38 @@ library LibGame {
         mob.target_cell_index = 1;
     }
 
-    function generate_tower(
-        uint256 _damage,
-        uint8 _range,
-        uint8 _fire_rate
-    ) internal pure returns (Tower memory tower) {
-        tower.damage = _damage;
-        tower.range = _range;
-        tower.fire_rate = _fire_rate;
-    }
-
     function wave_in_progress(
-        Game storage g,
+        Mob[] memory _mobs,
         uint256 _mobs_spawned,
-        uint256 _mobs_amount
-    ) internal view returns (bool) {
-        if (g.life == 0) return false;
+        uint256 _mobs_amount,
+        uint8 _life_remaining
+    ) internal pure returns (bool) {
+        if (_life_remaining == 0) return false;
         if (_mobs_spawned < _mobs_amount) return true;
 
         // has mob on terrain
         for (uint256 i = 0; i < _mobs_spawned; i++) {
-            Mob storage mob = g.mobs[i];
+            Mob memory mob = _mobs[i];
             // if the mob is alive and didn't reached the goal
             if (mob.life > 0 && !mob.reached_goal) return true;
         }
         return false;
     }
 
-    function compute_score(Game storage g) internal view returns (uint256) {
-        uint256 tower_amount = g.cells_with_towers.length;
-        // define the cost of each tower later
-        uint256 total_tower_cost = tower_amount * 100;
-        return total_tower_cost * g.life * g.wave;
+    function compute_score(
+        Tower[] memory _towers,
+        uint8 _life,
+        uint8 _wave,
+        uint256 _total_tick
+    ) internal pure returns (uint256) {
+        uint256 towers_value;
+
+        for (uint256 i; i < _towers.length; i++)
+            towers_value += _towers[i].score_value;
+
+        uint256 intermediate = towers_value * _life * _wave;
+
+        return _total_tick >= intermediate ? 0 : intermediate - _total_tick;
     }
 
     function is_on_mob_path(uint8 _cell_id) private view returns (bool) {
@@ -179,17 +177,8 @@ library LibGame {
         return false;
     }
 
-    function place_tower(
-        Game storage g,
-        uint8 _cell_id,
-        uint256 _damage,
-        uint8 _range,
-        uint8 _fire_rate
-    ) internal {
-        require(!is_on_mob_path(_cell_id), 'Placing tower on mobs path');
-
-        delete g.towers[_cell_id];
-        g.towers[_cell_id] = generate_tower(_damage, _range, _fire_rate);
-        g.cells_with_towers.push(_cell_id);
+    function place_tower(Game storage g, Tower calldata _tower) internal {
+        require(!is_on_mob_path(_tower.cell_id), 'Placing tower on mobs path');
+        g.towers[g.tower_amount++] = _tower;
     }
 }
