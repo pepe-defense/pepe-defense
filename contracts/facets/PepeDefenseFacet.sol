@@ -28,12 +28,13 @@ pragma solidity ^0.8.16;
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡾⢷⡄⠀⠀⠀⠀⠉⠙⠯⠀⠀⡴⠋⠀⢠⠟⠀⠀⢹⡄
  */
 import {LibLeaderboard} from '../libraries/LibLeaderboard.sol';
-import {State, Game, Mob, Leaderboard} from '../libraries/LibState.sol';
+import {LibState, State, Game, Mob, Tower, Leaderboard} from '../libraries/LibState.sol';
 import {LibMath} from '../libraries/LibMath.sol';
 import {LibGame} from '../libraries/LibGame.sol';
 import {MOB_BASE_AMOUNT, MOB_AMOUNT_MODIFIER, MAX_WAVES} from '../Constants.sol';
 
 contract PepeDefenseFacet {
+    using LibState for State;
     using LibLeaderboard for Leaderboard;
     using LibGame for Game;
 
@@ -52,18 +53,17 @@ contract PepeDefenseFacet {
         game.life = 20;
     }
 
-    function place_towers(
-        uint8[] calldata _cell_ids,
-        uint256 _damage,
-        uint8 _range,
-        uint8 _fire_rate
-    ) external game_started not_dead {
+    function set_towers(Tower[] calldata _towers)
+        external
+        game_started
+        not_dead
+    {
         Game storage game = s.games[msg.sender];
 
-        delete game.cells_with_towers;
-
-        for (uint8 i = 0; i < _cell_ids.length; i++)
-            game.place_tower(_cell_ids[i], _damage, _range, _fire_rate);
+        for (uint8 i = 0; i < _towers.length; i++) {
+            delete game.towers[i];
+            game.place_tower(_towers[i]);
+        }
     }
 
     function start_wave() external game_started not_last_wave not_dead {
@@ -77,25 +77,50 @@ contract PepeDefenseFacet {
             current_wave
         );
         uint256 mobs_spawned = 0;
-        while (game.wave_in_progress(mobs_spawned, mobs_amount)) {
+        uint8 life_remaining = game.life;
+        uint256 tick = game.total_tick;
+        uint256 tower_amount = game.tower_amount;
+
+        Mob[] memory mobs = new Mob[](mobs_amount);
+        Tower[] memory towers = new Tower[](tower_amount);
+        for (uint256 i = 0; i < tower_amount; i++) towers[i] = game.towers[i];
+
+        do {
             if (mobs_spawned < mobs_amount) {
-                game.mobs[mobs_spawned++] = LibGame.generate_mob(current_wave);
+                mobs[mobs_spawned++] = LibGame.generate_mob(current_wave);
             }
-            game.compute_towers(mobs_spawned);
-            game.move_mobs(mobs_spawned, MOB_PATH);
-            game.tick++;
-        }
+            LibGame.compute_towers(towers, mobs, mobs_spawned, tick);
+            life_remaining = LibGame.compute_mobs(
+                mobs,
+                mobs_spawned,
+                MOB_PATH,
+                life_remaining
+            );
+            tick++;
+        } while (
+            LibGame.wave_in_progress(
+                mobs,
+                mobs_spawned,
+                mobs_amount,
+                life_remaining
+            )
+        );
 
         // done playing
-        bool won_the_wave = game.life > 0;
+        bool won_the_wave = life_remaining > 0;
 
         if (won_the_wave) {
             // increase score
-            uint256 wave_score = game.compute_score();
+            uint256 wave_score = LibGame.compute_score(
+                towers,
+                life_remaining,
+                current_wave,
+                tick
+            );
 
             game.score += wave_score;
 
-            s.leaderboard.save(msg.sender, game.score);
+            s.leaderboard().save(msg.sender, game.score);
 
             // increase wave
             game.wave++;
@@ -105,8 +130,10 @@ contract PepeDefenseFacet {
             game.finished = true;
         }
 
+        game.life = life_remaining;
+        game.total_tick = tick;
+
         emit wave_end(msg.sender, current_wave, won_the_wave);
-        game.tick = 0;
     }
 
     /***********************************|

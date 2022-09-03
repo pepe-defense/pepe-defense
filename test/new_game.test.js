@@ -8,8 +8,8 @@ export default deploy => () => {
       wave: 1,
       life: 20,
       finished: false,
-      tick: 0,
       score: 0,
+      total_tick: 0,
     }
 
     const { tony } = await deploy()
@@ -18,9 +18,9 @@ export default deploy => () => {
     expect({
       wave: await tony.contract.get_wave(),
       life: await tony.contract.get_life(),
-      tick: await tony.contract.get_tick().then(number),
       finished: await tony.contract.get_is_finished(),
       score: await tony.contract.get_score().then(number),
+      total_tick: await tony.contract.get_total_tick().then(number),
     }).to.deep.equalInAnyOrder(expected_state)
   })
 }

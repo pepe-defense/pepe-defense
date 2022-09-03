@@ -5,6 +5,7 @@
     "hardhat": "node --require esm node_modules/.bin/hardhat",
     "compile": "npm run hardhat compile",
     "deploy": "npm run hardhat deploy",
+    "verify": "node --require esm scripts/verify.js",
     "gasreport": "npm run hardhat test",
     "test": "npm run hardhat coverage",
     "lint": "eslint . && prettier . --check && solhint 'contracts/**/*.sol'",

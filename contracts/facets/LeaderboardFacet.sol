@@ -27,12 +27,13 @@ pragma solidity ^0.8.16;
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠈⠻⢦⡀⠀⣰⠏⠀⠀⢀⡴⠃⢀⡄⠙⣆⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡾⢷⡄⠀⠀⠀⠀⠉⠙⠯⠀⠀⡴⠋⠀⢠⠟⠀⠀⢹⡄
  */
-import {State, Leaderboard} from '../libraries/LibState.sol';
+import {LibState, State, Leaderboard} from '../libraries/LibState.sol';
 
 contract LeaderboardFacet {
-    State internal state;
+    using LibState for State;
+    State internal s;
 
-    function leaderboard_set_username(string calldata _username) external {
-        state.leaderboard.usernames[msg.sender] = _username;
+    function set_username(string calldata _username) external {
+        s.leaderboard().usernames[msg.sender] = _username;
     }
 }

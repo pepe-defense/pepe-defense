@@ -27,13 +27,14 @@ pragma solidity ^0.8.16;
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠈⠻⢦⡀⠀⣰⠏⠀⠀⢀⡴⠃⢀⡄⠙⣆⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡾⢷⡄⠀⠀⠀⠀⠉⠙⠯⠀⠀⡴⠋⠀⢠⠟⠀⠀⢹⡄
  */
-import {State} from './libraries/LibState.sol';
+import {LibState, State} from './libraries/LibState.sol';
 
 contract PepeUpgrade {
+    using LibState for State;
     State internal s;
 
     function post_upgrade() external {
-        s.leaderboard.LENGTH = 20;
+        s.leaderboard().LENGTH = 20;
         s.MOB_PATH = [
             uint8(0),
             1,

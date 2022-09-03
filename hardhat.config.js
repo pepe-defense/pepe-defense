@@ -6,14 +6,10 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-// 0x6154f0Edd49C38C434d98175C1DECe68047F4952
-const TEST_ETH_PRIVATE_KEY =
-  '038bd6788c61c62b46c61a669462b653ceff07297d55ff58b0ef8fa30488055c'
-
 const {
   CMC_KEY,
   MUMBAI_RPC,
-  ETH_PRIVATE_KEY = TEST_ETH_PRIVATE_KEY,
+  ETH_PRIVATE_KEY,
   ETHERSCAN_APIKEY,
   POLYGONSCAN_API_KEY,
 } = process.env
@@ -31,7 +27,7 @@ export default {
   },
   gasReporter: {
     enabled: true,
-    // token: 'MATIC',
+    token: 'MATIC',
     currency: 'EUR',
     showTimeSpent: true,
     ...(CMC_KEY && { coinmarketcap: CMC_KEY }),
