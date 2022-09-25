@@ -27,7 +27,7 @@ export default {
   },
   gasReporter: {
     enabled: true,
-    token: 'MATIC',
+    // token: 'MATIC',
     currency: 'EUR',
     showTimeSpent: true,
     ...(CMC_KEY && { coinmarketcap: CMC_KEY }),

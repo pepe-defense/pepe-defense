@@ -14,8 +14,8 @@ export default deploy => async () => {
   it('Should add in the top player', async () => {
     const { tony } = await deploy()
     const towers = [
-      { ...DEFAULT_TOWER, cell_id: 11 },
-      { ...DEFAULT_TOWER, cell_id: 12 },
+      { ...DEFAULT_TOWER, cell_id: 81 },
+      { ...DEFAULT_TOWER, cell_id: 99 },
     ]
 
     await tony.contract.new_game()
@@ -26,7 +26,7 @@ export default deploy => async () => {
     const expected = [
       {
         user: tony.address,
-        score: 3981,
+        score: 1987,
         username: 'Tony',
       },
     ]
@@ -40,10 +40,10 @@ export default deploy => async () => {
   it('Should shift players when a better score is found', async () => {
     const { tony, bruce } = await deploy()
     const tony_towers = [
-      { ...DEFAULT_TOWER, cell_id: 11 },
-      { ...DEFAULT_TOWER, cell_id: 12 },
+      { ...DEFAULT_TOWER, cell_id: 81 },
+      { ...DEFAULT_TOWER, cell_id: 99 },
     ]
-    const bruce_towers = [{ ...DEFAULT_TOWER, damage: 5, cell_id: 11 }]
+    const bruce_towers = [{ ...DEFAULT_TOWER, damage: 5, cell_id: 101 }]
 
     await tony.contract.new_game()
     await bruce.contract.new_game()
@@ -58,12 +58,12 @@ export default deploy => async () => {
     const expected = [
       {
         user: tony.address,
-        score: 11942,
+        score: 9962,
         username: 'Tony',
       },
       {
         user: bruce.address,
-        score: 1966,
+        score: 957,
         username: 'Bruce',
       },
     ]

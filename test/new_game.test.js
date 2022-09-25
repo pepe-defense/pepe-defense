@@ -6,7 +6,7 @@ export default deploy => () => {
   it(`should set a specific state to the player's game`, async () => {
     const expected_state = {
       wave: 1,
-      life: 20,
+      life: 10,
       finished: false,
       score: 0,
       total_tick: 0,
