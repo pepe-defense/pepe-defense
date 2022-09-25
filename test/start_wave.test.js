@@ -21,15 +21,11 @@ export default deploy => () => {
       fire_rate: 5,
     }
     await tony.contract.new_game()
-    await tony.contract.set_towers([
-      { ...tower, cell_id: 12 },
-      { ...tower, cell_id: 22 },
-      { ...tower, cell_id: 62 },
-      { ...tower, cell_id: 72 },
-    ])
+
+    await tony.contract.set_towers([{ ...tower, cell_id: 99 }])
 
     await Promise.all(
-      Array.from({ length: 9 }).map(() => tony.contract.start_wave())
+      Array.from({ length: 19 }).map(() => tony.contract.start_wave())
     )
 
     await expect(tony.contract.start_wave()).to.be.revertedWith(
@@ -69,38 +65,35 @@ export default deploy => () => {
     expect(result).to.deep.equalInAnyOrder(expected)
   })
 
-  it('should win the game if there is enough towers', async () => {
+  it('should win the wave if there is enough towers', async () => {
     const { tony } = await deploy()
     const expected = {
       player: tony.address,
-      wave: 1,
+      wave: 2,
       won: true,
     }
 
     await tony.contract.new_game()
-    await tony.contract.set_towers([
-      { ...DEFAULT_TOWER, cell_id: 10 },
-      { ...DEFAULT_TOWER, cell_id: 12 },
-      { ...DEFAULT_TOWER, cell_id: 11 },
-    ])
+    await tony.contract.set_towers([{ ...DEFAULT_TOWER, cell_id: 107 }])
 
+    await tony.contract.start_wave()
     const result = await tony.contract.start_wave().then(extract_event)
     expect(result).to.deep.equalInAnyOrder(expected)
   })
 
-  it('should remove life if a mob is not kiled', async () => {
+  it('should remove life if a mob is not killed', async () => {
     const { tony } = await deploy()
     await tony.contract.new_game()
     await tony.contract.start_wave()
 
-    expect(await tony.contract.get_life()).to.equal(9)
+    expect(await tony.contract.get_life()).to.equal(5)
   })
 
   it('should attribute score if the wave is won', async () => {
     const { tony } = await deploy()
     const towers = [
-      { ...DEFAULT_TOWER, range: 10, cell_id: 11 },
-      { ...DEFAULT_TOWER, range: 10, cell_id: 12 },
+      { ...DEFAULT_TOWER, range: 10, cell_id: 101 },
+      { ...DEFAULT_TOWER, range: 10, cell_id: 73 },
     ]
     await tony.contract.new_game()
     await tony.contract.set_towers(towers)
@@ -123,7 +116,7 @@ export default deploy => () => {
       0
     )
     const expected_score_1 = towers_value * life_1 * 1 - tick_1
-    const expected_score_2 = towers_value * life_2 * 2 - tick_2
+    const expected_score_2 = towers_value * life_2 * 2 * 2 - tick_2
 
     // eslint-disable-next-line no-unused-expressions
     expect(won).to.be.true

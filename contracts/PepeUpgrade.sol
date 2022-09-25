@@ -27,7 +27,8 @@ pragma solidity ^0.8.16;
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠈⠻⢦⡀⠀⣰⠏⠀⠀⢀⡴⠃⢀⡄⠙⣆⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡾⢷⡄⠀⠀⠀⠀⠉⠙⠯⠀⠀⡴⠋⠀⢠⠟⠀⠀⢹⡄
  */
-import {LibState, State} from './libraries/LibState.sol';
+import {LibState, State, Position} from './libraries/LibState.sol';
+import {LibDistance} from './libraries/LibDistance.sol';
 
 contract PepeUpgrade {
     using LibState for State;
@@ -35,42 +36,58 @@ contract PepeUpgrade {
 
     function post_upgrade() external {
         s.leaderboard().LENGTH = 20;
-        s.MOB_PATH = [
-            uint8(0),
-            1,
-            2,
-            3,
-            13,
-            23,
-            33,
-            43,
-            42,
+
+        uint256[10] memory placement_tiles = [
+            uint256(81),
+            99,
+            101,
+            54,
             41,
-            51,
-            61,
-            71,
-            81,
-            82,
-            83,
-            84,
-            85,
-            86,
-            76,
+            73,
+            75,
+            107,
+            108,
+            76
+        ];
+
+        for (uint8 i = 0; i < placement_tiles.length; i++)
+            s.TOWER_CELLS[placement_tiles[i]] = true;
+
+        s.MOB_PATH = [
+            32,
+            33,
+            34,
+            50,
             66,
+            82,
+            98,
+            114,
+            130,
+            131,
+            132,
+            133,
+            134,
+            118,
+            102,
+            86,
+            70,
+            71,
+            72,
             56,
-            46,
-            36,
+            40,
+            24,
+            25,
             26,
-            27,
-            28,
-            38,
-            48,
+            42,
             58,
-            68,
-            78,
-            88,
-            89,
-            99
+            74,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96
         ];
     }
 }

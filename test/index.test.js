@@ -12,9 +12,10 @@ chai.use(deep_equal)
 
 print_wave(20)
 
-const deploy = async () => {
+const deploy = deployments.createFixture(async () => {
   await deployments.fixture()
   const [bruce, tony] = await ethers.getSigners()
+
   return {
     bruce: {
       contract: await ethers.getContract('PepeDefense', bruce),
@@ -25,7 +26,7 @@ const deploy = async () => {
       address: await tony.getAddress(),
     },
   }
-}
+})
 
 describe('Starting a new Game', new_game(deploy))
 describe('Placing towers', place_towers(deploy))

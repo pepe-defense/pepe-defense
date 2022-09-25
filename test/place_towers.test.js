@@ -14,7 +14,7 @@ export default deploy => () => {
   it('should make sure the game is started before', async () => {
     const { tony } = await deploy()
     await expect(
-      tony.contract.set_towers([{ ...DEFAULT_TOWER, cell_id: 5 }])
+      tony.contract.set_towers([{ ...DEFAULT_TOWER, cell_id: 81 }])
     ).to.be.revertedWith('The game must be started')
   })
 
@@ -24,19 +24,16 @@ export default deploy => () => {
     await tony.contract.start_wave()
     await tony.contract.start_wave()
     await expect(
-      tony.contract.set_towers([{ ...DEFAULT_TOWER, cell_id: 5 }])
+      tony.contract.set_towers([{ ...DEFAULT_TOWER, cell_id: 81 }])
     ).to.be.revertedWith('The game is over')
   })
 
-  it(`prevent placing a tower on the ennemies path`, async () => {
+  it(`prevent placing a tower outside a placement tile`, async () => {
     const { tony } = await deploy()
     await tony.contract.new_game()
     await expect(
-      tony.contract.set_towers([
-        { ...DEFAULT_TOWER, cell_id: 0 },
-        { ...DEFAULT_TOWER, cell_id: 3 },
-      ])
-    ).to.be.revertedWith('Placing tower on mobs path')
+      tony.contract.set_towers([{ ...DEFAULT_TOWER, cell_id: 0 }])
+    ).to.be.revertedWith(`Can't place a tower here`)
   })
 
   it('should place towers on corrects cells', async () => {
@@ -49,15 +46,15 @@ export default deploy => () => {
     const { tony } = await deploy()
     await tony.contract.new_game()
     await tony.contract.set_towers([
-      { ...tower, cell_id: 12 },
-      { ...tower, cell_id: 22 },
+      { ...tower, cell_id: 73 },
+      { ...tower, cell_id: 107 },
     ])
 
     const towers = await tony.contract.get_towers()
 
     expect(towers.map(parse_struct)).to.deep.equalInAnyOrder([
-      { ...tower, cell_id: 12 },
-      { ...tower, cell_id: 22 },
+      { ...tower, cell_id: 73 },
+      { ...tower, cell_id: 107 },
     ])
   })
 }
