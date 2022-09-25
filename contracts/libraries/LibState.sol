@@ -46,7 +46,7 @@ struct Mob {
 }
 
 struct Tower {
-    uint8 cell_id;
+    uint256 cell_id;
     uint256 damage;
     uint8 range;
     uint8 fire_rate;
@@ -69,11 +69,16 @@ struct Game {
 struct Leaderboard {
     uint8 LENGTH;
     uint256 total_score;
-    // address leaderboard
+    // leaderboard index to address
     mapping(uint8 => address) users;
     // address  to score
     mapping(address => uint256) high_scores;
     mapping(address => string) usernames;
+}
+
+struct Position {
+    uint256 x;
+    uint256 y;
 }
 
 struct State {
@@ -82,17 +87,21 @@ struct State {
     // ╔══════════════════════════════════════════════════════════[ LEADERBOARD
     // it is mandatory to store any structs inside a mapping
     // to be able to extend them later
+    // so this is a mapping with a length of 1
     mapping(uint8 => Leaderboard) _leaderboard;
-    uint8[] MOB_PATH;
+    uint256[] MOB_PATH;
+    // tried to store all distance between each cells
+    // but it's
+    //  1) too heavy to initialize
+    //  2) to heavy to load in memory
+    // so let's store only the cells positions
+    // which will still ease the computation a bit
+    mapping(uint256 => Position) cells_positions;
+    // mapping of exisiting placement tiles
+    mapping(uint256 => bool) TOWER_CELLS;
 }
 
 library LibState {
-    function slot() internal pure returns (State storage s) {
-        assembly {
-            s.slot := 0
-        }
-    }
-
     function leaderboard(State storage s)
         internal
         view

@@ -1,8 +1,8 @@
 const MOB_BASE_LIFE = 3
 const MOB_BASE_SPEED = 15
-const MOB_BASE_AMOUNT = 10
-const MOB_LIFE_MODIFIER = 161
-const MOB_AMOUNT_MODIFIER = 119
+const MOB_BASE_AMOUNT = 5
+const MOB_LIFE_MODIFIER = 151
+const MOB_AMOUNT_MODIFIER = 110
 const MOB_SPEED_MODIFIER = 116
 
 function _curve(base, mod, wave) {

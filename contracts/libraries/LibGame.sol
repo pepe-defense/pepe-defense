@@ -27,26 +27,20 @@ pragma solidity ^0.8.16;
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠈⠻⢦⡀⠀⣰⠏⠀⠀⢀⡴⠃⢀⡄⠙⣆⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡾⢷⡄⠀⠀⠀⠀⠉⠙⠯⠀⠀⡴⠋⠀⢠⠟⠀⠀⢹⡄
  */
-import {LibDistance} from './LibDistance.sol';
 import {LibMath} from './LibMath.sol';
-import {LibState, State, Game, Mob, Tower} from '../libraries/LibState.sol';
-import {MAP_WIDTH, MOB_BASE_LIFE, MOB_LIFE_MODIFIER, MOB_BASE_SPEED, MOB_SPEED_MODIFIER, MOB_BASE_DAMAGE} from '../Constants.sol';
+import {LibState, Game, Mob, Tower, Position} from '../libraries/LibState.sol';
+import {MOB_BASE_LIFE, MOB_LIFE_MODIFIER, MOB_BASE_SPEED, MOB_SPEED_MODIFIER, MOB_BASE_DAMAGE} from '../Constants.sol';
+import {LibDistance} from './LibDistance.sol';
 
 library LibGame {
     function compute_mobs(
         Mob[] memory mobs,
         uint256 _mobs_spawned,
-        uint8[] memory MOB_PATH, // to heavy to instantiate on each tick
+        uint256[] memory MOB_PATH, // to heavy to instantiate on each tick
         uint8 _life_remaining
     ) internal pure returns (uint8) {
         for (uint256 i = 0; i < _mobs_spawned; i++) {
             Mob memory mob = mobs[i];
-            // console.log(
-            //     'computing mob(%s) life: %s, cell: %s',
-            //     i,
-            //     mob.life,
-            //     mob.target_cell_index
-            // );
 
             if (mob.life == 0 || mob.reached_goal) continue;
 
@@ -84,39 +78,34 @@ library LibGame {
         pure
         returns (bool)
     {
-        if (_mob.reached_goal || _mob.life == 0) return false;
         return
-            LibDistance.is_in_range(
-                _mob.cell_id,
-                _tower.cell_id,
-                _tower.range,
-                MAP_WIDTH
-            );
+            LibDistance.is_in_range(_mob.cell_id, _tower.cell_id, _tower.range);
     }
 
     function _tower_can_fire(Tower memory _tower, uint256 _tick)
         private
         pure
-        returns (bool)
+        returns (bool can_fire)
     {
-        return _tower.last_fired + _tower.fire_rate <= _tick;
+        unchecked {
+            can_fire = _tower.last_fired + _tower.fire_rate <= _tick;
+        }
     }
 
     function compute_towers(
         Tower[] memory _towers,
-        Mob[] memory mobs,
+        Mob[] memory _mobs,
         uint256 _mobs_spawned,
         uint256 _tick
     ) internal pure {
         for (uint8 i = 0; i < _towers.length; i++) {
             Tower memory tower = _towers[i];
+            if (!_tower_can_fire(tower, _tick)) continue;
 
             for (uint256 j = 0; j < _mobs_spawned; j++) {
-                Mob memory mob = mobs[j];
-                if (
-                    _tower_can_fire(tower, _tick) &&
-                    _tower_can_damage(tower, mob)
-                ) {
+                Mob memory mob = _mobs[j];
+                if (mob.reached_goal || mob.life == 0) continue;
+                if (_tower_can_damage(tower, mob)) {
                     tower.last_fired = _tick;
                     _damage_mob(mob, tower.damage);
                 }
@@ -164,21 +153,8 @@ library LibGame {
         for (uint256 i; i < _towers.length; i++)
             towers_value += _towers[i].score_value;
 
-        uint256 intermediate = towers_value * _life * _wave;
+        uint256 intermediate = towers_value * _life * _wave * _wave;
 
         return _total_tick >= intermediate ? 0 : intermediate - _total_tick;
-    }
-
-    function is_on_mob_path(uint8 _cell_id) private view returns (bool) {
-        uint8[] memory MOB_PATH = LibState.slot().MOB_PATH;
-        for (uint8 i = 0; i < MOB_PATH.length; i++) {
-            if (MOB_PATH[i] == _cell_id) return true;
-        }
-        return false;
-    }
-
-    function place_tower(Game storage g, Tower calldata _tower) internal {
-        require(!is_on_mob_path(_tower.cell_id), 'Placing tower on mobs path');
-        g.towers[g.tower_amount++] = _tower;
     }
 }
