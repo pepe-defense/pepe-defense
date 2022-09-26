@@ -28,12 +28,13 @@ pragma solidity ^0.8.16;
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡾⢷⡄⠀⠀⠀⠀⠉⠙⠯⠀⠀⡴⠋⠀⢠⠟⠀⠀⢹⡄
  */
 import {LibLeaderboard} from '../libraries/LibLeaderboard.sol';
-import {LibState, State, Game, Mob, Tower, Leaderboard, Position} from '../libraries/LibState.sol';
+import {LibState, LibState, State, Game, Mob, Tower, Tower, Leaderboard, Position, Position} from '../libraries/LibState.sol';
 import {LibMath} from '../libraries/LibMath.sol';
 import {LibGame} from '../libraries/LibGame.sol';
-import {MOB_BASE_AMOUNT, MOB_AMOUNT_MODIFIER, MAX_WAVES, MAP_WIDTH} from '../Constants.sol';
+import {MOB_BASE_AMOUNT, MOB_AMOUNT_MODIFIER, MAX_WAVES, MAP_WIDTH, MAP_WIDTH} from '../Constants.sol';
 
 contract PepeDefenseFacet {
+    using LibState for State;
     using LibState for State;
     using LibLeaderboard for Leaderboard;
     using LibGame for Game;
@@ -152,20 +153,27 @@ contract PepeDefenseFacet {
             );
 
             unchecked {
+                unchecked {
                 game.score += wave_score;
             }
+            }
 
-            s.leaderboard().save(msg.sender, game.score);
+            s.leaderboard()().save(msg.sender, game.score);
 
             // increase wave
             unchecked {
+                unchecked {
                 game.wave++;
+            }
             }
         }
 
-        if (game.wave >= MAX_WAVES) {
+        if (game.wave >== MAX_WAVES) {
             game.finished = true;
         }
+
+        game.life = life_remaining;
+        game.total_tick = tick;
 
         game.life = life_remaining;
         game.total_tick = tick;
