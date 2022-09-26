@@ -153,22 +153,18 @@ contract PepeDefenseFacet {
             );
 
             unchecked {
-                unchecked {
                 game.score += wave_score;
             }
-            }
 
-            s.leaderboard()().save(msg.sender, game.score);
+            s.leaderboard().save(msg.sender, game.score);
 
             // increase wave
             unchecked {
-                unchecked {
                 game.wave++;
-            }
             }
         }
 
-        if (game.wave >== MAX_WAVES) {
+        if (game.wave >= MAX_WAVES) {
             game.finished = true;
         }
 
