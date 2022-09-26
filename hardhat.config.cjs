@@ -1,8 +1,9 @@
-import '@nomicfoundation/hardhat-toolbox'
-import 'hardhat-deploy'
-import '@nomiclabs/hardhat-ethers'
-import '@nomiclabs/hardhat-etherscan'
-import dotenv from 'dotenv'
+require('@nomicfoundation/hardhat-toolbox')
+require('hardhat-deploy')
+require('@nomiclabs/hardhat-ethers')
+require('@nomiclabs/hardhat-etherscan')
+
+const dotenv = require('dotenv')
 
 dotenv.config()
 
@@ -20,7 +21,7 @@ const settings = {
   },
 }
 
-export default {
+module.exports = {
   solidity: {
     version: '0.8.16',
     settings,

@@ -4,3 +4,4 @@ coverage
 node_modules
 coverage.json
 deployments
+typechain-types

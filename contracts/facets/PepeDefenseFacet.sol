@@ -28,18 +28,28 @@ pragma solidity ^0.8.16;
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡾⢷⡄⠀⠀⠀⠀⠉⠙⠯⠀⠀⡴⠋⠀⢠⠟⠀⠀⢹⡄
  */
 import {LibLeaderboard} from '../libraries/LibLeaderboard.sol';
-import {LibState, State, Game, Mob, Tower, Leaderboard, Position} from '../libraries/LibState.sol';
+import {LibState, LibState, State, Game, Mob, Tower, Tower, Leaderboard, Position, Position} from '../libraries/LibState.sol';
 import {LibMath} from '../libraries/LibMath.sol';
 import {LibGame} from '../libraries/LibGame.sol';
-import {MOB_BASE_AMOUNT, MOB_AMOUNT_MODIFIER, MAX_WAVES, MAP_WIDTH} from '../Constants.sol';
+import {MOB_BASE_AMOUNT, MOB_AMOUNT_MODIFIER, MAX_WAVES, MAP_WIDTH, MAP_WIDTH} from '../Constants.sol';
 
 contract PepeDefenseFacet {
+    using LibState for State;
     using LibState for State;
     using LibLeaderboard for Leaderboard;
     using LibGame for Game;
 
     State internal s;
 
+    event game_created(address player, uint8 wave, uint8 life);
+    event wave_start(
+        address player,
+        uint8 wave,
+        Mob[] mobs,
+        Tower[] towers,
+        uint8 life,
+        uint256 tick
+    );
     event wave_end(address player, uint8 wave, bool won);
 
     /***********************************|
@@ -51,6 +61,7 @@ contract PepeDefenseFacet {
         Game storage game = s.games[msg.sender];
         game.wave = 1;
         game.life = 10;
+        emit game_created(msg.sender, game.wave, game.life);
     }
 
     function set_towers(Tower[] calldata _towers)
@@ -85,6 +96,15 @@ contract PepeDefenseFacet {
 
         Mob[] memory mobs = new Mob[](mobs_amount);
         Tower[] memory towers = new Tower[](tower_amount);
+
+        emit wave_start(
+            msg.sender,
+            current_wave,
+            mobs,
+            towers,
+            life_remaining,
+            tick
+        );
 
         // initialize towers in memory
         for (uint256 i = 0; i < tower_amount; ) {
@@ -133,20 +153,27 @@ contract PepeDefenseFacet {
             );
 
             unchecked {
+                unchecked {
                 game.score += wave_score;
             }
+            }
 
-            s.leaderboard().save(msg.sender, game.score);
+            s.leaderboard()().save(msg.sender, game.score);
 
             // increase wave
             unchecked {
+                unchecked {
                 game.wave++;
+            }
             }
         }
 
-        if (game.wave >= MAX_WAVES) {
+        if (game.wave >== MAX_WAVES) {
             game.finished = true;
         }
+
+        game.life = life_remaining;
+        game.total_tick = tick;
 
         game.life = life_remaining;
         game.total_tick = tick;

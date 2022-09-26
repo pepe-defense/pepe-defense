@@ -1,13 +1,13 @@
 {
   "name": "paper-defense",
   "version": "0.0.1",
+  "type": "module",
   "scripts": {
-    "hardhat": "node --require esm node_modules/.bin/hardhat",
-    "compile": "npm run hardhat compile",
-    "deploy": "npm run hardhat deploy",
-    "verify": "node --require esm scripts/verify.js",
-    "gasreport": "npm run hardhat test",
-    "test": "npm run hardhat coverage",
+    "compile": "hardhat compile",
+    "deploy": "hardhat deploy",
+    "deploy:mumbai": "hardhat deploy --network mumbai",
+    "gasreport": "hardhat test",
+    "test": "hardhat coverage",
     "lint": "eslint . && prettier . --check && solhint 'contracts/**/*.sol'",
     "format": "prettier . --write && eslint . --fix"
   },
@@ -31,7 +31,7 @@
     "eslint-plugin-promise": "6.0.1",
     "esm": "^3.2.25",
     "ethers": "^5.7.1",
-    "hardhat": "^2.11.2",
+    "hardhat": "^2.12.0-esm.0",
     "hardhat-deploy": "^0.11.15",
     "prettier": "^2.7.1",
     "solhint": "^3.3.7"

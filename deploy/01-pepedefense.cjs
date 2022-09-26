@@ -1,4 +1,4 @@
-export default async ({ getNamedAccounts, deployments: { diamond } }) => {
+module.exports = async ({ getNamedAccounts, deployments: { diamond } }) => {
   const { owner } = await getNamedAccounts()
   await diamond.deploy('PepeDefense', {
     from: owner,

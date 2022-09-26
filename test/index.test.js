@@ -1,6 +1,6 @@
 import deep_equal from 'deep-equal-in-any-order'
 import chai from 'chai'
-import { deployments, ethers } from 'hardhat'
+import hardhat from 'hardhat'
 
 import new_game from './new_game.test.js'
 import place_towers from './place_towers.test.js'
@@ -8,6 +8,7 @@ import start_wave from './start_wave.test.js'
 import print_wave from './util/print_waves.js'
 import leaderboard from './leaderboard.test.js'
 
+const { deployments, ethers } = hardhat
 chai.use(deep_equal)
 
 print_wave(20)
