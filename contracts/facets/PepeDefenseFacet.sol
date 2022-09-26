@@ -70,6 +70,7 @@ contract PepeDefenseFacet {
         not_dead
     {
         Game storage game = s.games[msg.sender];
+        game.tower_amount = 0;
 
         for (uint8 i = 0; i < _towers.length; i++) {
             Tower calldata tower = _towers[i];

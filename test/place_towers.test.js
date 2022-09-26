@@ -36,6 +36,28 @@ export default deploy => () => {
     ).to.be.revertedWith(`Can't place a tower here`)
   })
 
+  it('should replace towers on each call and not merge only', async () => {
+    const { tony } = await deploy()
+    await tony.contract.new_game()
+    await tony.contract.set_towers([
+      { ...DEFAULT_TOWER, cell_id: 73 },
+      { ...DEFAULT_TOWER, cell_id: 107 },
+      { ...DEFAULT_TOWER, cell_id: 99 },
+      { ...DEFAULT_TOWER, cell_id: 41 },
+    ])
+    await tony.contract.set_towers([
+      { ...DEFAULT_TOWER, cell_id: 99 },
+      { ...DEFAULT_TOWER, cell_id: 54 },
+    ])
+
+    const towers = await tony.contract.get_towers()
+
+    expect(towers.map(parse_struct)).to.deep.equalInAnyOrder([
+      { ...DEFAULT_TOWER, cell_id: 99 },
+      { ...DEFAULT_TOWER, cell_id: 54 },
+    ])
+  })
+
   it('should place towers on corrects cells', async () => {
     const tower = {
       ...DEFAULT_TOWER,
