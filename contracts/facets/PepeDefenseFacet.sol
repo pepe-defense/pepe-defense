@@ -42,15 +42,17 @@ contract PepeDefenseFacet {
     State internal s;
 
     event game_created(address player, uint8 wave, uint8 life);
-    event wave_start(
+    event towers_placed(address player);
+    event wave(
         address player,
         uint8 wave,
         Mob[] mobs,
         Tower[] towers,
         uint8 life,
-        uint256 tick
+        uint256 tick,
+        bool won,
+        uint256 score
     );
-    event wave_end(address player, uint8 wave, bool won);
 
     /***********************************|
    |         Write Functions        |
@@ -78,6 +80,7 @@ contract PepeDefenseFacet {
             delete game.towers[i];
             game.towers[game.tower_amount++] = tower;
         }
+        emit towers_placed(msg.sender);
     }
 
     function start_wave() external game_started not_last_wave not_dead {
@@ -97,15 +100,6 @@ contract PepeDefenseFacet {
 
         Mob[] memory mobs = new Mob[](mobs_amount);
         Tower[] memory towers = new Tower[](tower_amount);
-
-        emit wave_start(
-            msg.sender,
-            current_wave,
-            mobs,
-            towers,
-            life_remaining,
-            tick
-        );
 
         // initialize towers in memory
         for (uint256 i = 0; i < tower_amount; ) {
@@ -172,10 +166,18 @@ contract PepeDefenseFacet {
         game.life = life_remaining;
         game.total_tick = tick;
 
-        game.life = life_remaining;
-        game.total_tick = tick;
+        uint256 total_score = game.score;
 
-        emit wave_end(msg.sender, current_wave, won_the_wave);
+        emit wave(
+            msg.sender,
+            current_wave,
+            mobs,
+            towers,
+            life_remaining,
+            tick,
+            won_the_wave,
+            total_score
+        );
     }
 
     /***********************************|

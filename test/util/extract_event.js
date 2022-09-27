@@ -4,4 +4,4 @@ export default async tx_response =>
   tx_response
     .wait()
     .then(({ events }) => events)
-    .then(([, { args }]) => parse_struct(args))
+    .then(([{ args }]) => parse_struct(args))

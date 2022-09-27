@@ -150,7 +150,7 @@ library LibGame {
     ) internal pure returns (uint256) {
         uint256 towers_value;
 
-        for (uint256 i; i < _towers.length; i++)
+        for (uint256 i = 0; i < _towers.length; i++)
             towers_value += _towers[i].score_value;
 
         uint256 intermediate = towers_value * _life * _wave * _wave;
